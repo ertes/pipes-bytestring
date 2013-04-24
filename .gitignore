@@ -1,0 +1,6 @@
+/bench
+/dist/
+/doctest
+/pipes-bytestring
+/pipes-bytestring-test
+/tests
