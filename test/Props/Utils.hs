@@ -10,7 +10,7 @@ module Props.Utils
     where
 
 import Control.Monad.Writer
-import Control.Proxy
+import Control.Proxy hiding (dropD, dropWhileD, takeWhileD)
 import Control.Proxy.ByteString
 import Data.Word
 import Test.Framework.Providers.QuickCheck2

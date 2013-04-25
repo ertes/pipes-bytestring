@@ -11,15 +11,50 @@ module Control.Proxy.ByteString.List
       unpackD,
 
       -- * Substreams
-      takeD
+      dropD,
+      dropWhileD,
+      takeD,
+      takeWhileD
     )
     where
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as Bl
-import Control.Proxy
+import Control.Proxy hiding (dropD, dropWhileD, takeWhileD)
 import Data.ByteString (ByteString)
 import Data.Word
+
+
+-- | Equivalent to 'B.drop'.
+
+dropD ::
+    (Monad m, Proxy p)
+    => Int  -- ^ Number of initial bytes to drop.
+    -> () -> Pipe p ByteString ByteString m r
+dropD n = runIdentityK (loop n >=> idT)
+    where
+    loop n =
+        request >=> \bs ->
+            let len = B.length bs in
+            if len < n
+              then loop (n - len) ()
+              else respond (B.drop n bs)
+
+
+-- | Equivalent to 'B.dropWhile'.
+
+dropWhileD ::
+    (Monad m, Proxy p)
+    => (Word8 -> Bool)  -- ^ Drop bytes while this predicate is true.
+    -> () -> Pipe p ByteString ByteString m r
+dropWhileD p = runIdentityK (loop >=> idT)
+    where
+    loop =
+        request >=> \bs ->
+            let sfx = B.dropWhile p bs in
+            if B.null sfx
+              then loop ()
+              else respond sfx
 
 
 -- | Turn the given lazy 'ByteString' into a stream of its strict
@@ -43,6 +78,22 @@ takeD = runIdentityK . loop
             if len < n
               then respond bs >>= loop (n - len)
               else respond (B.take n bs)
+
+
+-- | Equivalent to 'B.takeWhile'.
+
+takeWhileD ::
+    (Monad m, Proxy p)
+    => (Word8 -> Bool)  -- ^ Take bytes while this predicate is true.
+    -> () -> Pipe p ByteString ByteString m ()
+takeWhileD p = runIdentityK loop
+    where
+    loop =
+        request >=> \bs ->
+            let (pfx, sfx) = B.span p bs in
+            if B.null sfx
+              then respond pfx >>= loop
+              else respond pfx
 
 
 -- | Equivalent of 'B.unfoldr'.  Generate a 'ByteString' stream using
