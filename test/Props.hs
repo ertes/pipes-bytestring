@@ -8,8 +8,9 @@
 
 module Main where
 
+import Props.List
 import Test.Framework
 
 
 main :: IO ()
-main = defaultMain []
+main = defaultMain [listProps]
